@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Confirming Payment — SI Academy</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,400;0,9..144,500;0,9..144,600;1,9..144,400;1,9..144,500&family=Manrope:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<link rel="icon" type="image/png" href="assets/favicon-32.png">
+<link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<header id="siteHeader">
+  <div class="wrap">
+    <a href="index.html" class="logo"><img src="assets/logo-mark.png" alt="Si Photography" class="logo-icon"> Photography</a>
+    <nav class="primary-nav">
+      <a href="index.html">Home</a>
+      <a href="portfolio.html">Portfolio</a>
+      <a href="about.html">About</a>
+      <a href="services.html">Services</a>
+      <a href="academy.html" class="active">Academy</a>
+      <a href="contact.html">Contact</a>
+    </nav>
+    <a href="contact.html" class="nav-cta">Book a Session</a>
+    <button class="burger" id="burger" aria-label="Open menu"><span></span><span></span><span></span></button>
+  </div>
+</header>
+
+<section class="auth-section">
+  <div class="auth-card" id="statusCard" style="text-align:center;">
+    <p>Confirming your payment&hellip;</p>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">
+    <a href="index.html" class="logo"><img src="assets/logo-mark.png" alt="Si Photography" class="logo-icon"> Photography</a>
+    <nav>
+      <a href="portfolio.html">Portfolio</a>
+      <a href="about.html">About</a>
+      <a href="services.html">Services</a>
+      <a href="academy.html">Academy</a>
+      <a href="contact.html">Contact</a>
+    </nav>
+    <div class="foot-social">
+      <a href="#">Instagram</a>
+      <a href="#">Facebook</a>
+      <a href="#">LinkedIn</a>
+    </div>
+    <div class="copyright">© Si Photography 2026. All rights reserved.</div>
+  </div>
+</footer>
+
+<script src="main.js"></script>
+<script src="academy.js"></script>
+<script>
+(async () => {
+  const params = new URLSearchParams(window.location.search);
+  const slug = params.get('course');
+  // Paystack appends its own transaction reference to the callback_url —
+  // as `reference` (and often `trxref`, the same value) — after payment.
+  const reference = params.get('reference') || params.get('trxref');
+  const card = document.getElementById('statusCard');
+
+  const user = await academyGetMe();
+  if (!user) {
+    card.innerHTML = `<p>Please sign in to finish confirming your payment.</p><a href="academy-login.html" class="btn-primary" style="margin-top:16px;display:inline-block;">Sign In</a>`;
+    return;
+  }
+  if (!reference || !slug) {
+    card.innerHTML = `<p>We couldn't find a payment reference to confirm.</p><a href="academy.html" style="color:var(--accent);">Back to Academy</a>`;
+    return;
+  }
+
+  const result = await academyVerifyPayment(reference);
+  if (result.ok) {
+    card.innerHTML = `
+      <div class="kicker">Payment confirmed</div>
+      <h1 style="font-size:1.6rem;margin-bottom:14px;">You're in! 🎉</h1>
+      <p style="color:var(--text-2);margin-bottom:26px;">Your course is unlocked — redirecting you now.</p>
+      <a href="academy-course.html?course=${slug}" class="btn-primary">Start Learning</a>`;
+    setTimeout(() => { window.location.href = 'academy-course.html?course=' + slug; }, 1800);
+  } else {
+    card.innerHTML = `
+      <div class="kicker">Payment not confirmed</div>
+      <h1 style="font-size:1.6rem;margin-bottom:14px;">Something didn't go through</h1>
+      <p style="color:var(--text-2);margin-bottom:26px;">${result.error}</p>
+      <a href="academy-checkout.html?course=${slug}" class="btn-primary">Try Again</a>`;
+  }
+})();
+</script>
+</body>
+</html>

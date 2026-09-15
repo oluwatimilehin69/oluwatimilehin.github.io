@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>My Dashboard — SI Academy</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,400;0,9..144,500;0,9..144,600;1,9..144,400;1,9..144,500&family=Manrope:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<link rel="icon" type="image/png" href="assets/favicon-32.png">
+<link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<header id="siteHeader">
+  <div class="wrap">
+    <a href="index.html" class="logo"><img src="assets/logo-mark.png" alt="Si Photography" class="logo-icon"> Photography</a>
+    <nav class="primary-nav">
+      <a href="index.html">Home</a>
+      <a href="portfolio.html">Portfolio</a>
+      <a href="about.html">About</a>
+      <a href="services.html">Services</a>
+      <a href="academy.html" class="active">Academy</a>
+      <a href="contact.html">Contact</a>
+    </nav>
+    <a href="contact.html" class="nav-cta">Book a Session</a>
+    <button class="burger" id="burger" aria-label="Open menu"><span></span><span></span><span></span></button>
+  </div>
+</header>
+
+<div class="account-bar">
+  <div class="wrap">
+    <div class="who">Signed in as <b id="whoName"></b></div>
+    <a href="#" class="signout" id="signOutBtn">Sign Out</a>
+  </div>
+</div>
+
+<section id="dash-welcome">
+  <div class="wrap dash-welcome">
+    <h1 id="welcomeHeading">Welcome back</h1>
+    <p>Here's where you left off — pick up any course, or browse for something new.</p>
+    <div class="dash-stats">
+      <div><b id="statEnrolled">0</b><span>Courses enrolled</span></div>
+      <div><b id="statCompleted">0</b><span>Lessons completed</span></div>
+      <div><b id="statProgress">0%</b><span>Overall progress</span></div>
+    </div>
+  </div>
+</section>
+
+<section id="dash-courses">
+  <div class="wrap">
+    <div class="dash-section-title">
+      <h2>My Courses</h2>
+      <a href="academy.html">Browse all courses &rarr;</a>
+    </div>
+    <div class="my-courses" id="myCourses"></div>
+  </div>
+</section>
+
+<section id="dash-profile">
+  <div class="wrap">
+    <div class="dash-section-title"><h2>Profile</h2></div>
+    <div class="profile-card">
+      <div class="row">
+        <div><span>Name</span><b id="profName"></b></div>
+        <div><span>Email</span><b id="profEmail"></b></div>
+        <div><span>Member since</span><b id="profJoined"></b></div>
+      </div>
+      <a href="#" class="btn-ghost" id="signOutBtn2">Sign Out</a>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">
+    <a href="index.html" class="logo"><img src="assets/logo-mark.png" alt="Si Photography" class="logo-icon"> Photography</a>
+    <nav>
+      <a href="portfolio.html">Portfolio</a>
+      <a href="about.html">About</a>
+      <a href="services.html">Services</a>
+      <a href="academy.html">Academy</a>
+      <a href="contact.html">Contact</a>
+    </nav>
+    <div class="foot-social">
+      <a href="#">Instagram</a>
+      <a href="#">Facebook</a>
+      <a href="#">LinkedIn</a>
+    </div>
+    <div class="copyright">© Si Photography 2026. All rights reserved.</div>
+  </div>
+</footer>
+
+<script src="main.js"></script>
+<script src="academy.js"></script>
+<script>
+(async () => {
+  const user = await academyGetMe();
+  if (!user) { window.location.href = 'academy-login.html'; return; }
+
+  let courses;
+  try {
+    courses = await academyFetchCourses();
+  } catch (err) {
+    document.getElementById('myCourses').innerHTML = `<p style="color:var(--text-2);">${err.message}</p>`;
+    return;
+  }
+
+  document.getElementById('whoName').textContent = user.name;
+  document.getElementById('welcomeHeading').textContent = 'Welcome back, ' + user.name.split(' ')[0];
+  document.getElementById('profName').textContent = user.name;
+  document.getElementById('profEmail').textContent = user.email;
+  document.getElementById('profJoined').textContent = new Date(user.joined).toLocaleDateString(undefined, { year:'numeric', month:'long', day:'numeric' });
+
+  [document.getElementById('signOutBtn'), document.getElementById('signOutBtn2')].forEach(btn => {
+    btn.addEventListener('click', (e) => { e.preventDefault(); academySignOut(); });
+  });
+
+  const purchasedSlugs = Object.keys(user.enrollments).filter(slug => user.enrollments[slug].paid);
+  let totalCompleted = 0, totalLessons = 0;
+
+  const myCoursesWrap = document.getElementById('myCourses');
+  if (purchasedSlugs.length === 0) {
+    myCoursesWrap.innerHTML = `
+      <div class="empty-state">
+        <p>You haven't purchased a course yet.</p>
+        <a href="academy.html" class="btn-primary">Browse Courses</a>
+      </div>`;
+  } else {
+    purchasedSlugs.forEach(slug => {
+      const course = courses.find(c => c.slug === slug);
+      if (!course) return;
+      const enrollment = user.enrollments[slug];
+      const total = academyCourseTotalLessons(course);
+      const done = enrollment.completedLessons.length;
+      const pct = academyCourseProgress(enrollment, course);
+      totalCompleted += done;
+      totalLessons += total;
+
+      const card = document.createElement('div');
+      card.className = 'my-course-card';
+      card.innerHTML = `
+        <span class="level-tag">${course.level}</span>
+        <h3>${course.title}</h3>
+        <div class="progress-track"><div class="progress-fill" style="width:${pct}%"></div></div>
+        <div class="progress-label"><span>${done} / ${total} lessons</span><span>${pct}%</span></div>
+        <a href="academy-course.html?course=${slug}" class="btn-ghost">${pct === 100 ? 'Review Course' : 'Continue'}</a>`;
+      myCoursesWrap.appendChild(card);
+    });
+  }
+
+  document.getElementById('statEnrolled').textContent = purchasedSlugs.length;
+  document.getElementById('statCompleted').textContent = totalCompleted;
+  document.getElementById('statProgress').textContent = (totalLessons === 0 ? 0 : Math.round((totalCompleted / totalLessons) * 100)) + '%';
+})();
+</script>
+</body>
+</html>

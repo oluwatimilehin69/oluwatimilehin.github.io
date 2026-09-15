@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sign In — SI Academy</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,400;0,9..144,500;0,9..144,600;1,9..144,400;1,9..144,500&family=Manrope:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<link rel="icon" type="image/png" href="assets/favicon-32.png">
+<link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<header id="siteHeader">
+  <div class="wrap">
+    <a href="index.html" class="logo"><img src="assets/logo-mark.png" alt="Si Photography" class="logo-icon"> Photography</a>
+    <nav class="primary-nav">
+      <a href="index.html">Home</a>
+      <a href="portfolio.html">Portfolio</a>
+      <a href="about.html">About</a>
+      <a href="services.html">Services</a>
+      <a href="academy.html" class="active">Academy</a>
+      <a href="contact.html">Contact</a>
+    </nav>
+    <a href="contact.html" class="nav-cta">Book a Session</a>
+    <button class="burger" id="burger" aria-label="Open menu"><span></span><span></span><span></span></button>
+  </div>
+</header>
+
+<section class="auth-section">
+  <div class="auth-card">
+    <div class="kicker">SI Academy</div>
+    <h1>Welcome back</h1>
+    <p>Sign in to pick up where you left off.</p>
+
+    <div class="auth-error" id="authError"></div>
+
+    <form id="loginForm">
+      <div class="field"><label for="email">Email</label><input id="email" type="email" required></div>
+      <div class="field"><label for="password">Password</label><input id="password" type="password" required></div>
+      <button type="submit" class="btn-primary auth-submit">Sign In</button>
+    </form>
+
+    <div class="auth-switch">New to SI Academy? <a href="academy-register.html">Create an account</a></div>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">
+    <a href="index.html" class="logo"><img src="assets/logo-mark.png" alt="Si Photography" class="logo-icon"> Photography</a>
+    <nav>
+      <a href="portfolio.html">Portfolio</a>
+      <a href="about.html">About</a>
+      <a href="services.html">Services</a>
+      <a href="academy.html">Academy</a>
+      <a href="contact.html">Contact</a>
+    </nav>
+    <div class="foot-social">
+      <a href="#">Instagram</a>
+      <a href="#">Facebook</a>
+      <a href="#">LinkedIn</a>
+    </div>
+    <div class="copyright">© Si Photography 2026. All rights reserved.</div>
+  </div>
+</footer>
+
+<script src="main.js"></script>
+<script src="academy.js"></script>
+<script>
+(async () => {
+  if (await academyGetMe()) { window.location.href = 'academy-dashboard.html'; return; }
+
+  const form = document.getElementById('loginForm');
+  const errorBox = document.getElementById('authError');
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const email = document.getElementById('email').value.trim();
+    const password = document.getElementById('password').value;
+    const btn = form.querySelector('button');
+    btn.disabled = true;
+    const result = await academyLogin(email, password);
+    if (!result.ok) {
+      errorBox.textContent = result.error;
+      errorBox.classList.add('show');
+      btn.disabled = false;
+      return;
+    }
+    const params = new URLSearchParams(window.location.search);
+    window.location.href = params.get('next') || 'academy-dashboard.html';
+  });
+})();
+</script>
+</body>
+</html>

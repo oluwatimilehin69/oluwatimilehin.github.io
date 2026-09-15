@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Course — SI Academy</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,400;0,9..144,500;0,9..144,600;1,9..144,400;1,9..144,500&family=Manrope:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<link rel="icon" type="image/png" href="assets/favicon-32.png">
+<link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<header id="siteHeader">
+  <div class="wrap">
+    <a href="index.html" class="logo"><img src="assets/logo-mark.png" alt="Si Photography" class="logo-icon"> Photography</a>
+    <nav class="primary-nav">
+      <a href="index.html">Home</a>
+      <a href="portfolio.html">Portfolio</a>
+      <a href="about.html">About</a>
+      <a href="services.html">Services</a>
+      <a href="academy.html" class="active">Academy</a>
+      <a href="contact.html">Contact</a>
+    </nav>
+    <a href="contact.html" class="nav-cta">Book a Session</a>
+    <button class="burger" id="burger" aria-label="Open menu"><span></span><span></span><span></span></button>
+  </div>
+</header>
+
+<section class="course-hero-block">
+  <div class="wrap" id="courseHeroWrap">
+    <!-- filled by script -->
+  </div>
+</section>
+
+<section id="course-content">
+  <div class="wrap">
+    <div class="modules" id="modulesWrap"></div>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">
+    <a href="index.html" class="logo"><img src="assets/logo-mark.png" alt="Si Photography" class="logo-icon"> Photography</a>
+    <nav>
+      <a href="portfolio.html">Portfolio</a>
+      <a href="about.html">About</a>
+      <a href="services.html">Services</a>
+      <a href="academy.html">Academy</a>
+      <a href="contact.html">Contact</a>
+    </nav>
+    <div class="foot-social">
+      <a href="#">Instagram</a>
+      <a href="#">Facebook</a>
+      <a href="#">LinkedIn</a>
+    </div>
+    <div class="copyright">© Si Photography 2026. All rights reserved.</div>
+  </div>
+</footer>
+
+<script src="main.js"></script>
+<script src="academy.js"></script>
+<script>
+(async () => {
+  const params = new URLSearchParams(window.location.search);
+  const slug = params.get('course');
+  const heroWrap = document.getElementById('courseHeroWrap');
+  const modulesWrap = document.getElementById('modulesWrap');
+
+  let courses;
+  try {
+    courses = await academyFetchCourses();
+  } catch (err) {
+    heroWrap.innerHTML = `<p>${err.message}</p>`;
+    return;
+  }
+  const course = courses.find(c => c.slug === slug);
+
+  if (!course) {
+    heroWrap.innerHTML = `<p>We couldn't find that course. <a href="academy.html" style="color:var(--accent);">Back to Academy</a></p>`;
+    return;
+  }
+
+  let user = await academyGetMe();
+  const totalLessons = academyCourseTotalLessons(course);
+  let purchased = !!(user && user.enrollments[course.slug] && user.enrollments[course.slug].paid);
+
+  document.title = course.title + ' — SI Academy';
+
+  function renderHero(){
+    const enrollment = purchased ? user.enrollments[course.slug] : null;
+    const pct = purchased ? academyCourseProgress(enrollment, course) : 0;
+    const done = enrollment ? enrollment.completedLessons.length : 0;
+
+    heroWrap.innerHTML = `
+      <span class="level-tag">${course.level}</span>
+      <h1>${course.title}</h1>
+      <p>${course.tagline} &mdash; ${course.duration}, ${course.modules.length} modules, ${totalLessons} lessons.</p>
+      ${purchased ? `
+        <div class="course-progress-wrap">
+          <div class="progress-label"><span>${done} / ${totalLessons} lessons complete</span><span>${pct}%</span></div>
+          <div class="progress-track"><div class="progress-fill" style="width:${pct}%"></div></div>
+        </div>` : `
+        <div class="lock-note"><span class="lock-icon"></span> Full lessons unlock after purchase — browse the curriculum below first.</div>
+        <div class="buy-block">
+          <span class="price-tag">${academyFormatNaira(course.price)}</span>
+          ${user
+            ? `<a href="academy-checkout.html?course=${course.slug}" class="btn-primary">Buy This Course</a>`
+            : `<a href="academy-login.html?next=academy-course.html%3Fcourse%3D${course.slug}" class="btn-primary">Sign In to Purchase</a>`
+          }
+        </div>`
+      }`;
+  }
+
+  function renderModules(){
+    modulesWrap.innerHTML = '';
+    const completed = purchased ? user.enrollments[course.slug].completedLessons : [];
+
+    course.modules.forEach((mod, mi) => {
+      const modEl = document.createElement('div');
+      modEl.className = 'module';
+      const doneInMod = mod.lessons.filter((_, li) => completed.includes(mi + '-' + li)).length;
+      modEl.innerHTML = `
+        <div class="module-head">
+          <h3>Module ${mi + 1}: ${mod.title}</h3>
+          <span>${purchased ? doneInMod + ' / ' + mod.lessons.length + ' complete' : mod.lessons.length + ' lessons'}</span>
+        </div>
+        <div class="lesson-list"></div>`;
+      const listEl = modEl.querySelector('.lesson-list');
+      mod.lessons.forEach((lesson, li) => {
+        const key = mi + '-' + li;
+        const isDone = completed.includes(key);
+        const row = document.createElement('div');
+        row.className = 'lesson-row' + (isDone ? ' done' : '') + (!purchased ? ' locked' : '');
+        const cbId = 'lesson-' + key;
+        row.innerHTML = `
+          <input type="checkbox" id="${cbId}" ${isDone ? 'checked' : ''} ${!purchased ? 'disabled' : ''}>
+          <label for="${cbId}">${lesson}</label>`;
+        if (purchased) {
+          row.querySelector('input').addEventListener('change', async () => {
+            row.querySelector('input').disabled = true;
+            try {
+              await academyToggleLesson(course.slug, key);
+              user = await academyGetMe();
+              renderAll();
+            } catch (err) {
+              alert(err.message);
+              row.querySelector('input').disabled = false;
+            }
+          });
+        }
+        listEl.appendChild(row);
+      });
+      modulesWrap.appendChild(modEl);
+    });
+  }
+
+  function renderAll(){
+    renderHero();
+    renderModules();
+  }
+  renderAll();
+})();
+</script>
+</body>
+</html>

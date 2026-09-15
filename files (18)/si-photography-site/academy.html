@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SI Academy — Learn Photography</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,400;0,9..144,500;0,9..144,600;1,9..144,400;1,9..144,500&family=Manrope:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<link rel="icon" type="image/png" href="assets/favicon-32.png">
+<link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<header id="siteHeader">
+  <div class="wrap">
+    <a href="index.html" class="logo"><img src="assets/logo-mark.png" alt="Si Photography" class="logo-icon"> Photography</a>
+    <nav class="primary-nav">
+      <a href="index.html">Home</a>
+      <a href="portfolio.html">Portfolio</a>
+      <a href="about.html">About</a>
+      <a href="services.html">Services</a>
+      <a href="academy.html" class="active">Academy</a>
+      <a href="contact.html">Contact</a>
+    </nav>
+    <a href="contact.html" class="nav-cta">Book a Session</a>
+    <button class="burger" id="burger" aria-label="Open menu"><span></span><span></span><span></span></button>
+  </div>
+</header>
+
+<section class="academy-hero">
+  <div class="wrap">
+    <div class="eyebrow">SI Academy</div>
+    <h1>Learn photography the way Sam shoots it</h1>
+    <p>Five courses built from a decade of real sessions — portraits, weddings, lighting and the business side most studios never teach. Learn at your own pace, track your progress, and pick up right where you left off.</p>
+    <div class="hero-ctas" id="guestCta">
+      <a href="academy-register.html" class="btn-primary">Create Free Account</a>
+      <a href="academy-login.html" class="btn-ghost">Sign In</a>
+    </div>
+    <div class="hero-ctas" id="authedCta">
+      <a href="academy-dashboard.html" class="btn-primary">Go to My Dashboard</a>
+    </div>
+  </div>
+</section>
+
+<section id="courses">
+  <div class="wrap">
+    <div class="section-head">
+      <h2>Courses</h2>
+      <p>Start anywhere — each course stands on its own, with lessons you can revisit any time.</p>
+    </div>
+    <div class="course-grid" id="courseGrid"></div>
+  </div>
+</section>
+
+<section id="why-academy">
+  <div class="wrap">
+    <div class="section-head">
+      <h2>Why learn here</h2>
+      <p>Built by a working studio, not a stock curriculum.</p>
+    </div>
+    <div class="why-grid">
+      <div class="why-card">
+        <h3>Taught from real sessions</h3>
+        <p>Every lesson is drawn from an actual shoot in the Si Photography archive — not staged examples.</p>
+      </div>
+      <div class="why-card">
+        <h3>Learn at your pace</h3>
+        <p>No live cohorts or deadlines. Your progress is saved automatically as you go.</p>
+      </div>
+      <div class="why-card">
+        <h3>The business side too</h3>
+        <p>Pricing, contracts and client care — the parts most photography courses skip entirely.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">
+    <a href="index.html" class="logo"><img src="assets/logo-mark.png" alt="Si Photography" class="logo-icon"> Photography</a>
+    <nav>
+      <a href="portfolio.html">Portfolio</a>
+      <a href="about.html">About</a>
+      <a href="services.html">Services</a>
+      <a href="academy.html">Academy</a>
+      <a href="contact.html">Contact</a>
+    </nav>
+    <div class="foot-social">
+      <a href="#">Instagram</a>
+      <a href="#">Facebook</a>
+      <a href="#">LinkedIn</a>
+    </div>
+    <div class="copyright">© Si Photography 2026. All rights reserved.</div>
+  </div>
+</footer>
+
+<script src="main.js"></script>
+<script src="academy.js"></script>
+<script>
+(async () => {
+  const grid = document.getElementById('courseGrid');
+  let courses;
+  try {
+    courses = await academyFetchCourses();
+  } catch (err) {
+    grid.innerHTML = `<p style="color:var(--text-2);">${err.message}</p>`;
+    return;
+  }
+
+  courses.forEach(course => {
+    const totalLessons = academyCourseTotalLessons(course);
+    const card = document.createElement('div');
+    card.className = 'course-card';
+    card.innerHTML = `
+      <div class="photo"><span class="cap">${course.title}<span>${course.level}</span></span></div>
+      <div class="course-body">
+        <span class="level-tag">${course.level}</span>
+        <h3>${course.title}</h3>
+        <p>${course.tagline}</p>
+        <div class="course-meta">
+          <span>${course.duration} &middot; ${totalLessons} lessons</span>
+          <span class="price-tag">${academyFormatNaira(course.price)}</span>
+        </div>
+        <a href="academy-course.html?course=${course.slug}" class="btn-ghost">View Course</a>
+      </div>`;
+    grid.appendChild(card);
+  });
+
+  const user = await academyGetMe();
+  document.body.classList.toggle('is-authed', !!user);
+})();
+</script>
+</body>
+</html>
